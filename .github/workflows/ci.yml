@@ -1,0 +1,54 @@
+# Runs the Liquibase updateSQL command to inspect the SQL
+# that will be run against the database when
+# the pull request is created.
+
+name: Inspect Liquibase generated SQL
+
+on:
+  workflow_dispatch:
+   inputs:
+     environment:
+       description: 'Choose an environment: stage | prod'
+       required: true
+       default: 'stage'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  Inspect-SQL:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Login to Stage Azure
+        uses: azure/login@v1.1
+        if: ${{ github.event.inputs.environment == 'stage' }}
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_STAGE }}
+
+      - name: Inspect Stage Database SQL
+        uses: liquibase/liquibase-github-action@v2
+        if: ${{ github.event.inputs.environment == 'stage' }}
+        with:
+          operation: 'updateSQL'
+          changeLogFile: './dbschema/00000_master_changelog.xml'
+          username: ${{ secrets.USERNAME_STAGE }}
+          password: ${{ secrets.PASSWORD_STAGE }}
+          url: ${{ secrets.DATABASE_URL_STAGE }}
+
+      - name: Login to Production Azure
+        uses: azure/login@v1.1
+        if: ${{ github.event.inputs.environment == 'prod' }}
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_PROD }}
+
+      - name: Inspect Production Database SQL
+        uses: liquibase/liquibase-github-action@v2
+        if: ${{ github.event.inputs.environment == 'prod' }}
+        with:
+          operation: 'updateSQL'
+          changeLogFile: './dbschema/00000_master_changelog.xml'
+          username: ${{ secrets.USERNAME_PROD }}
+          password: ${{ secrets.PASSWORD_PROD }}
+          url: ${{ secrets.DATABASE_URL_PROD }}

@@ -1,0 +1,13 @@
+changeLogFile=./dbschema/00000_master_changelog.xml
+url=jdbc:sqlserver://<DATABASE-SERVER-NAME>:<PORT>;database=<DATABASE-NAME>
+url=jdbc:mysql://<DATABASE-SERVER-NAME>:<PORT>/<DATABASE-NAME>
+url=jdbc:postgresql://<DATABASE-SERVER-NAME>:<PORT>/<DATABASE-NAME>
+username=<database_username>
+password=<database_password>
+outputFile=output.txt
+includeCatalog=true
+includeSchema=true
+includeTablespace=true
+schemas=dbo,audit
+
+liquibase.hub.mode=off

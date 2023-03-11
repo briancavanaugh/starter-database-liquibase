@@ -1,0 +1,47 @@
+# Runs the Azure scripts to create Resource Groups,
+# SQL Servers, and SQL Databases on demand in a given
+# environment so that database scripts can be deployed.
+
+name: Create Azure resources
+
+on:
+  workflow_dispatch:
+   inputs:
+     environment:
+       description: 'Choose an environment: stage | prod'
+       required: true
+       default: 'stage'
+
+jobs:
+  Azure-Scripting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to Stage Azure
+        uses: azure/login@v1.1
+        if: ${{ github.event.inputs.environment == 'stage' }}
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_STAGE }}
+
+      - name: Create Azure Stage Resource Group, SQL Server, and SQL Database
+        uses: azure/cli@v1
+        if: ${{ github.event.inputs.environment == 'stage' }}
+        with:
+          inlinescript: |
+            az group create -n ${{ secrets.AZURE_RESOURCE_GROUP_STAGE }} -l ${{ secrets.AZURE_LOCATION }}
+            az sql server create -g ${{ secrets.AZURE_RESOURCE_GROUP_STAGE }} -l ${{ secrets.AZURE_LOCATION }} -n ${{ secrets.AZURE_SQL_SERVER_STAGE }} --admin-user ${{ secrets.USERNAME_STAGE }} --admin-password ${{ secrets.PASSWORD_STAGE }}
+            az sql db create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP_STAGE }} --server ${{ secrets.AZURE_SQL_SERVER_STAGE }} --name ${{ secrets.AZURE_SQL_DATABASE_STAGE }} --edition Basic
+
+      - name: Login to Production Azure
+        uses: azure/login@v1.1
+        if: ${{ github.event.inputs.environment == 'prod' }}
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_PROD }}
+
+      - name: Create Azure Prod Resource Group, SQL Server, and SQL Database
+        uses: azure/cli@v1
+        if: ${{ github.event.inputs.environment == 'prod' }}
+        with:
+          inlinescript: |
+            az group create -n ${{ secrets.AZURE_RESOURCE_GROUP_PROD }} -l ${{ secrets.AZURE_LOCATION }}
+            az sql server create -g ${{ secrets.AZURE_RESOURCE_GROUP_PROD }} -l ${{ secrets.AZURE_LOCATION }} -n ${{ secrets.AZURE_SQL_SERVER_PROD }} --admin-user ${{ secrets.USERNAME_PROD }} --admin-password ${{ secrets.PASSWORD_PROD }}
+            az sql db create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP_PROD }} --server ${{ secrets.AZURE_SQL_SERVER_PROD }} --name ${{ secrets.AZURE_SQL_DATABASE_PROD }} --edition Basic
